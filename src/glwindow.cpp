@@ -278,6 +278,9 @@ void OpenGLWindow::render()
     // Swap the front and back buffers on the window, effectively putting what we just "drew"
     // onto the screen (whereas previously it only existed in memory)
     SDL_GL_SwapWindow(sdlWin);
+
+    //glm::vec4 light_position = light_position*modelMat; //position of light source
+
 }
 
 // The program will exit if this function returns false
