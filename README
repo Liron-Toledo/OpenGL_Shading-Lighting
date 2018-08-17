@@ -1,0 +1,13 @@
+Usage Instructions:
+===================
+To build, run make with the appropriate makefile depending on your OS/setup ('make' or 'make build')
+To run, again run make but this time using the 'run' rule ('make run')
+
+Controls:
+=========
+Q,E - Translate the objects
+W - Cycle through the axes of translation
+A,D - Rotate the objects
+S - Cycle through the axes of rotation
+Z,C - Scale the objects
+X - Cycle through the axes of scaling
