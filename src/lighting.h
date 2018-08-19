@@ -3,34 +3,34 @@
 
 #include "entity.h"
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 struct lightSource
-{
-    Entity values;
-    int lightLoc;
+{   
+    Entity entity;
     
-    glm::vec4 specular;
-    glm::vec4 diffuse;
-    glm::vec4 materialSpecular;
-    glm::vec4 materialDiffuse;   
-    
+    int shaderLightLocation;
+
+    glm::vec4 light_specular;
+    glm::vec4 light_diffuse;
+
+    glm::vec4 material_specular;
+    glm::vec4 material_diffuse;   
 
     glm::vec4 getLightPosition()
     {
-    	return glm::vec4(values.position, 0.0);
+    	return glm::vec4(entity.position, 0.0);
     }
 
-    glm::vec4 getDiffuse()
+    glm::vec4 getSpecularValue()
     {
-        return diffuse * materialDiffuse;
+    	return light_specular * material_specular;
     }
 
-    glm::vec4 getSpecular()
+    glm::vec4 getDiffuseValue()
     {
-    	return specular * materialSpecular;
+    	return light_diffuse * material_diffuse;
     }
-
-    
 };
 
 #endif

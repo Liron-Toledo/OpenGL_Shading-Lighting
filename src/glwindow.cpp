@@ -9,7 +9,6 @@
 
 #include "glwindow.h"
 #include "geometry.h"
-#include "lighting.h"
 
 using namespace std;
 
@@ -114,6 +113,7 @@ OpenGLWindow::OpenGLWindow()
 
 void OpenGLWindow::initGL()
 {
+    // Setting up the SDL window
     // We need to first specify what type of OpenGL context we need before we can create the window
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -158,7 +158,7 @@ void OpenGLWindow::initGL()
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    shader = loadShaderProgram("test2.vert", "test2.frag");
+    shader = loadShaderProgram("phong.vert", "phong.frag");
     glUseProgram(shader);
 
     // Set our viewing and projection matrices, since these do not change over time
@@ -176,54 +176,62 @@ void OpenGLWindow::initGL()
     // Load the model that we want to use and buffer the vertex attributes
     geometry.loadFromOBJFile("cube.obj");
 
-    int vertexLoc = glGetAttribLocation(shader, "vPosition");
+    int normalsSize = geometry.normals.size() * sizeof(float) * 3;
+
+    int vertexCount = geometry.vertexCount() * sizeof(float) * 3;
+    
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    
-    glBufferData(GL_ARRAY_BUFFER, 3*geometry.vertexCount()*sizeof(float) + 3*geometry.normals.size()*sizeof(float),NULL, GL_STATIC_DRAW);
-    glBufferSubData( GL_ARRAY_BUFFER, 0, 3*geometry.vertexCount()*sizeof(float) , geometry.vertexData() );
-    glBufferSubData( GL_ARRAY_BUFFER, 3*geometry.vertexCount()*sizeof(float),3*geometry.normals.size()*sizeof(float),  geometry.normalData() );
+    glBufferData(GL_ARRAY_BUFFER, vertexCount + normalsSize, NULL, GL_STATIC_DRAW);
+    glBufferSubData( GL_ARRAY_BUFFER, 0, vertexCount, geometry.vertexData() );
+    glBufferSubData( GL_ARRAY_BUFFER, vertexCount, normalsSize, geometry.normalData() );
 
-    GLuint vPosition = glGetAttribLocation( shader, "vPosition" );
-    glEnableVertexAttribArray( vPosition );
-    glVertexAttribPointer( vPosition, 3, GL_FLOAT, GL_FALSE, 0,(GLvoid*)(0) );
+    GLuint vPosition = glGetAttribLocation(shader, "position");
+    glEnableVertexAttribArray(vPosition);
+    glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, 0,(GLvoid*)(0));
 
-    GLuint vNormal = glGetAttribLocation( shader, "vNormal" );
-    glEnableVertexAttribArray( vNormal );
-    glVertexAttribPointer( vNormal, 3, GL_FLOAT, GL_FALSE, 0,(GLvoid*)( 3*geometry.vertexCount()*sizeof(float)) );
+    GLuint vNormal = glGetAttribLocation( shader, "vNormal");
+    glEnableVertexAttribArray(vNormal);
+    glVertexAttribPointer( vNormal, 3, GL_FLOAT, GL_FALSE, 0,(GLvoid*)vertexCount);
 
-    // Initialize shader lighting parameters
-    glm::vec4 light_position( 3.0, 1.0, 0.0, 0.0 ); //position of light source
+    // Lighting shader values:
+
     glm::vec4 light_ambient( 0.2, 0.2, 0.2, 1.0 );
-    glm::vec4 light_diffuse( 1.0, 1.0, 1.0, 1.0 );
-    glm::vec4 light_specular( 1.0, 1.0, 1.0, 1.0 );
     glm::vec4 material_ambient( 1.0, 0.0, 1.0, 1.0 );
-    glm::vec4 material_diffuse( 1.0, 0.8, 0.0, 1.0 );
-    glm::vec4 material_specular( 1.0, 0.0, 1.0, 1.0 );
-    float  material_shininess = 5.0;
+    float material_shininess = 5.0f;
 
-    glm::vec4 ambient_product = light_ambient * material_ambient;
-    glm::vec4 diffuse_product = light_diffuse * material_diffuse;
-    glm::vec4 specular_product = light_specular * material_specular;
+    glm::vec4 ambientProduct = light_ambient * material_ambient;
 
-    glUniform4fv( glGetUniformLocation(shader, "AmbientProduct"),1, &ambient_product[0] );
-    glUniform4fv( glGetUniformLocation(shader, "DiffuseProduct"),1, &diffuse_product[0] );
-    glUniform4fv( glGetUniformLocation(shader, "SpecularProduct"),1, &specular_product[0] );
-    glUniform4fv( glGetUniformLocation(shader, "LightPosition"),1, &light_position[0] );
-    glUniform1f( glGetUniformLocation(shader, "Shininess"),material_shininess );
+    glUniform4fv( glGetUniformLocation(shader, "AmbientProduct"),1, &ambientProduct[0] );
+    glUniform1f( glGetUniformLocation(shader, "Shininess"), material_shininess);
 
-    ///////////////////////////////////////////////////
-    // light1.transform.position = glm::vec3(0.0,3.0,2.0);
-    // light1.diffuse = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
-    // light1.specular = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
-    // light1.matDiffuse = glm::vec4( 1.0, 0.8, 0.0, 1.0 );
-    // light1.matSpecular = glm::vec4( 1.0, 0.0, 1.0, 1.0 );
+    //LIGHT 1:
 
-    // light1.shaderPositionLoc = glGetUniformLocation(shader, "LightPosition1");
+    lightSource1.entity.position = glm::vec3(1.0,2.0,3.0);
+    lightSource1.light_specular = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
+    lightSource1.light_diffuse = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
+    lightSource1.material_specular = glm::vec4( 1.0, 0.0, 1.0, 1.0 );
+    lightSource1.material_diffuse = glm::vec4( 1.0, 0.8, 0.0, 1.0 );
 
-    // glUniform4fv( glGetUniformLocation(shader, "DiffuseProduct1"),1, &light1.getDiffuse()[0] );
-    // glUniform4fv( glGetUniformLocation(shader, "SpecularProduct1"),1, &light1.getSpec()[0] );
-    // glUniform4fv( light1.shaderPositionLoc ,1, &light1.getPos()[0] );
+    lightSource1.shaderLightLocation = glGetUniformLocation(shader, "LightPosition");
+
+    glUniform4fv( glGetUniformLocation(shader, "DiffuseProduct1"),1, &lightSource1.getDiffuseValue()[0] );
+    glUniform4fv( glGetUniformLocation(shader, "SpecularProduct1"),1, &lightSource1.getSpecularValue()[0] );
+    glUniform4fv( lightSource1.shaderLightLocation ,1, &lightSource1.getLightPosition()[0] );
+
+    //LIGHT 2:
+    
+    lightSource2.entity.position = glm::vec3(-1.0,-2.0,3.0);
+    lightSource2.light_specular = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
+    lightSource2.light_diffuse = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
+    lightSource2.material_specular = glm::vec4( 1.0, 0.0, 1.0, 1.0 );
+    lightSource2.material_diffuse = glm::vec4( 1.0, 0.8, 0.0, 1.0 );
+
+    lightSource2.shaderLightLocation = glGetUniformLocation(shader, "LightPosition2");
+
+    glUniform4fv( glGetUniformLocation(shader, "DiffuseProduct2"),1, &lightSource2.getDiffuseValue()[0] );
+    glUniform4fv( glGetUniformLocation(shader, "SpecularProduct2"),1, &lightSource2.getSpecularValue()[0] );
+    glUniform4fv( lightSource2.shaderLightLocation ,1, &lightSource2.getLightPosition()[0] );
 
     glPrintError("Setup complete", true);
 }
@@ -250,15 +258,11 @@ void OpenGLWindow::render()
     int modelMatrixLoc = glGetUniformLocation(shader, "modelMatrix");
     glUniformMatrix4fv(modelMatrixLoc, 1, false, &modelMat[0][0]);
 
-    int colorLoc = glGetUniformLocation(shader, "objectColor");
-    glUniform3fv(colorLoc, 1, &entityColors[3*colorIndex]);
-
     glDrawArrays(GL_TRIANGLES, 0, geometry.vertexCount());
 
     // NOTE: This assumes that we're using the same mesh for the child and parent object, if
     //       You used a different mesh for the child, you would need to give it its own VAO
     //       and the bind that and upload all relevant data (IE the other matrices)
-
     glm::mat4 childModelMat(1.0f);
     childModelMat = glm::translate(childModelMat, childEntity.position);
     childModelMat = glm::rotate(childModelMat, childEntity.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -269,14 +273,25 @@ void OpenGLWindow::render()
     childModelMat = modelMat * childModelMat;
     glUniformMatrix4fv(modelMatrixLoc, 1, false, &childModelMat[0][0]);
 
-    int childColorIndex = (colorIndex+1)%5;
-    glUniform3fv(colorLoc, 1, &entityColors[3*childColorIndex]);
     glDrawArrays(GL_TRIANGLES, 0, geometry.vertexCount());
+
+    // Rotating lightSource1
+    lightSource1.entity.rotation.z += 0.15;
+    glm::mat4 lightingMat2(1.0f);
+    lightingMat2 = glm::translate(lightingMat2, lightSource1.entity.position);
+    lightingMat2 = glm::rotate(lightingMat2, lightSource1.entity.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+    glUniform4fv( lightSource1.shaderLightLocation, 1, &lightingMat2[0][0] );
+
+    // Rotating lightSource2
+    lightSource2.entity.rotation.y += 0.03;
+    glm::mat4 lightingMat(1.0f);
+    lightingMat = glm::translate(lightingMat, lightSource2.entity.position);
+    lightingMat = glm::rotate(lightingMat, lightSource2.entity.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+    glUniform4fv( lightSource2.shaderLightLocation, 1, &lightingMat[0][0] );
 
     // Swap the front and back buffers on the window, effectively putting what we just "drew"
     // onto the screen (whereas previously it only existed in memory)
     SDL_GL_SwapWindow(sdlWin);
-
 }
 
 // The program will exit if this function returns false

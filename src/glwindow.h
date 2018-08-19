@@ -7,6 +7,7 @@
 
 #include "geometry.h"
 #include "entity.h"
+#include "lighting.h"
 
 class OpenGLWindow
 {
@@ -17,6 +18,7 @@ public:
     void render();
     bool handleEvent(SDL_Event e);
     void cleanup();
+    void loadTexture(const std::string &filename);
 
 private:
     SDL_Window* sdlWin;
@@ -27,6 +29,9 @@ private:
 
     Entity parentEntity;
     Entity childEntity;
+
+    lightSource lightSource1;
+    lightSource lightSource2;
 
     GeometryData geometry;
 
