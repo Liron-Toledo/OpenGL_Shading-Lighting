@@ -9,6 +9,7 @@
 
 #include "glwindow.h"
 #include "geometry.h"
+#include "lighting.h"
 
 using namespace std;
 
@@ -111,7 +112,6 @@ OpenGLWindow::OpenGLWindow()
     scaleDirection = 0;
 }
 
-
 void OpenGLWindow::initGL()
 {
     // We need to first specify what type of OpenGL context we need before we can create the window
@@ -176,28 +176,15 @@ void OpenGLWindow::initGL()
     // Load the model that we want to use and buffer the vertex attributes
     geometry.loadFromOBJFile("cube.obj");
 
-    int vertexLoc = glGetAttribLocation(shader, "position");
+    int vertexLoc = glGetAttribLocation(shader, "vPosition");
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    //glBufferData(GL_ARRAY_BUFFER, 3*geometry.vertexCount()*sizeof(float),geometry.vertexData(), GL_STATIC_DRAW);
+    
     glBufferData(GL_ARRAY_BUFFER, 3*geometry.vertexCount()*sizeof(float) + 3*geometry.normals.size()*sizeof(float),NULL, GL_STATIC_DRAW);
     glBufferSubData( GL_ARRAY_BUFFER, 0, 3*geometry.vertexCount()*sizeof(float) , geometry.vertexData() );
     glBufferSubData( GL_ARRAY_BUFFER, 3*geometry.vertexCount()*sizeof(float),3*geometry.normals.size()*sizeof(float),  geometry.normalData() );
 
-
-
-    //glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, false, 0, 0);
-    //glEnableVertexAttribArray(vertexLoc);
-
-    //int normalLoc = glGetAttribLocation(shader, "vNormal"); //phong shader
-    //glUniformMatrix3fv(normalLoc, 1, false, (const GLfloat*)geometry.normalData());
-   // glUniformMatrix3fv(normalLoc, 1, false, geometry.normalData());
-    //glEnableVertexAttribArray(normalLoc);
-    //glVertexAttribPointer(normalLoc,3,GL_FLOAT,GL_FALSE,)
-
-
-
-    GLuint vPosition = glGetAttribLocation( shader, "position" );
+    GLuint vPosition = glGetAttribLocation( shader, "vPosition" );
     glEnableVertexAttribArray( vPosition );
     glVertexAttribPointer( vPosition, 3, GL_FLOAT, GL_FALSE, 0,(GLvoid*)(0) );
 
@@ -205,10 +192,8 @@ void OpenGLWindow::initGL()
     glEnableVertexAttribArray( vNormal );
     glVertexAttribPointer( vNormal, 3, GL_FLOAT, GL_FALSE, 0,(GLvoid*)( 3*geometry.vertexCount()*sizeof(float)) );
 
-
-
     // Initialize shader lighting parameters
-    glm::vec4 light_position( 0.0, 1.0, 2.0, 0.0); //position of light source
+    glm::vec4 light_position( 3.0, 1.0, 0.0, 0.0 ); //position of light source
     glm::vec4 light_ambient( 0.2, 0.2, 0.2, 1.0 );
     glm::vec4 light_diffuse( 1.0, 1.0, 1.0, 1.0 );
     glm::vec4 light_specular( 1.0, 1.0, 1.0, 1.0 );
@@ -226,6 +211,19 @@ void OpenGLWindow::initGL()
     glUniform4fv( glGetUniformLocation(shader, "SpecularProduct"),1, &specular_product[0] );
     glUniform4fv( glGetUniformLocation(shader, "LightPosition"),1, &light_position[0] );
     glUniform1f( glGetUniformLocation(shader, "Shininess"),material_shininess );
+
+    ///////////////////////////////////////////////////
+    // light1.transform.position = glm::vec3(0.0,3.0,2.0);
+    // light1.diffuse = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
+    // light1.specular = glm::vec4( 1.0, 1.0, 1.0, 1.0 );
+    // light1.matDiffuse = glm::vec4( 1.0, 0.8, 0.0, 1.0 );
+    // light1.matSpecular = glm::vec4( 1.0, 0.0, 1.0, 1.0 );
+
+    // light1.shaderPositionLoc = glGetUniformLocation(shader, "LightPosition1");
+
+    // glUniform4fv( glGetUniformLocation(shader, "DiffuseProduct1"),1, &light1.getDiffuse()[0] );
+    // glUniform4fv( glGetUniformLocation(shader, "SpecularProduct1"),1, &light1.getSpec()[0] );
+    // glUniform4fv( light1.shaderPositionLoc ,1, &light1.getPos()[0] );
 
     glPrintError("Setup complete", true);
 }
@@ -278,8 +276,6 @@ void OpenGLWindow::render()
     // Swap the front and back buffers on the window, effectively putting what we just "drew"
     // onto the screen (whereas previously it only existed in memory)
     SDL_GL_SwapWindow(sdlWin);
-
-    //glm::vec4 light_position = light_position*modelMat; //position of light source
 
 }
 
